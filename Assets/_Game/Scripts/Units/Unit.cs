@@ -1,26 +1,41 @@
 using UnityEngine;
 
-public class Unit : MonoBehaviour
+public class Unit : MonoBehaviour, IDamageable
 {
-    [SerializeField] private bool isGhost = false; // Check this box for your Ghost Sphere
+    [Header("References")]
+    [SerializeField] private MeshRenderer unitMeshRenderer;
+    [SerializeField] private MoveAction moveAction;
+
+    [Header("Identity")]
+    [SerializeField] private bool isGhost = false; 
+    
+    [Header("Stats")]
+    [SerializeField] private BodyData_SO currentBodyData;
+
     private GridPosition gridPosition;
-    [SerializeField] private MeshRenderer meshRenderer;
+    private int currentStructure;
+
+    // EDITOR ONLY: Auto-assigns components when you add the script!
+    private void Reset()
+    {
+        unitMeshRenderer = GetComponentInChildren<MeshRenderer>();
+        moveAction = GetComponent<MoveAction>();
+    }
 
     private void Start()
     {
-        // 1. Calculate where I am starting using the SYSTEM, not the Object
         gridPosition = GridSystem.Instance.GetGridPosition(transform.position);
-
-        // 2. Snap to the center of that tile visually
         transform.position = GridSystem.Instance.GetWorldPosition(gridPosition);
         
-        // 3. Register self (only if the tile is empty)
         GridObject startNode = GridSystem.Instance.GetGridObject(gridPosition);
-        
-        // Safety Check: Ensure the node actually exists before accessing it
         if (startNode != null && startNode.GetUnit() == null)
         {
             startNode.SetUnit(this);
+        }
+
+        if (currentBodyData != null)
+        {
+            currentStructure = currentBodyData.maxStructure;
         }
     }
 
@@ -33,36 +48,80 @@ public class Unit : MonoBehaviour
             GridObject oldGridObject = GridSystem.Instance.GetGridObject(gridPosition);
             GridObject newGridObject = GridSystem.Instance.GetGridObject(newGridPosition);
 
-            // 1. Check for Collision / Possession
             Unit targetUnit = newGridObject.GetUnit();
             if (targetUnit != null)
             {
                 if (isGhost && !targetUnit.isGhost)
                 {
-                    // POSSESSION LOGIC
                     PerformPossession(targetUnit);
-                    return; // Stop execution so we don't register the dead ghost to the tile
+                    return; 
                 }
             }
 
-            // 2. Standard Movement Logic
             oldGridObject.SetUnit(null);
             newGridObject.SetUnit(this);
             gridPosition = newGridPosition;
         }
     }
 
-    private void PerformPossession(Unit targetBody)
+    // Public getter avoids GetComponent in other scripts
+    public MoveAction GetMoveAction()
     {
-        // A. Visuals: Turn the enemy Blue
-        meshRenderer.material.color = Color.blue;
-        
-        // B. Logic: Select the new body
-        UnitActionSystem.Instance.SetSelectedUnit(targetBody);
+        return moveAction;
+    }
 
-        // C. Cleanup: Destroy the Ghost
-        // (Clear the old tile first so it doesn't stay "occupied" by a dead ghost)
+    public void PerformPossession(Unit targetBody)
+    {
+        // OPTIMIZED: Uses the cached reference, not GetComponent
+        if (targetBody.unitMeshRenderer != null)
+        {
+            targetBody.unitMeshRenderer.material.color = Color.blue;
+        }
+        
+        UnitActionSystem.Instance.SetSelectedUnit(targetBody);
+        
         GridSystem.Instance.GetGridObject(gridPosition).SetUnit(null);
+        Destroy(gameObject);
+    }
+
+    public void TakeDamage(int incomingDamage)
+    {
+        if (currentBodyData == null) return;
+
+        int minor = currentBodyData.defenseThresholds[0];
+        int major = currentBodyData.defenseThresholds[1];
+        int fatal = currentBodyData.defenseThresholds[2];
+
+        if (incomingDamage >= fatal)
+        {
+            Debug.Log($"FATAL HIT! ({incomingDamage} vs {fatal})");
+            currentStructure = 0;
+        }
+        else if (incomingDamage >= major)
+        {
+            Debug.Log($"CRIT! ({incomingDamage} vs {major})");
+            currentStructure -= 2;
+        }
+        else if (incomingDamage >= minor)
+        {
+            Debug.Log($"HIT. ({incomingDamage} vs {minor})");
+            currentStructure -= 1;
+        }
+        else
+        {
+            Debug.Log($"GLANCE. ({incomingDamage} < {minor})");
+        }
+
+        if (currentStructure <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        GridPosition gridPos = GridSystem.Instance.GetGridPosition(transform.position);
+        GridSystem.Instance.GetGridObject(gridPos).SetUnit(null);
         Destroy(gameObject);
     }
 }

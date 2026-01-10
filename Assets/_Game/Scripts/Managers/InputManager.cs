@@ -9,10 +9,23 @@ public class InputManager : MonoBehaviour
 
     private void Awake()
     {
+        // Singleton Only
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
-
+    }
+    
+    public void Init()
+    {
         inputActions = new InputSystem_Actions();
         inputActions.Player.Enable(); // Enables the "Player" action map
+        
+        // If we need to enable specific action maps on start
+        // inputActions.Player.Enable(); 
+        Debug.Log("InputManager Active.");
     }
 
     public Vector2 GetMouseScreenPosition()
@@ -27,4 +40,12 @@ public class InputManager : MonoBehaviour
         // In the polished version, we will use events (inputActions.Player.Click.performed).
         return Mouse.current.leftButton.wasPressedThisFrame;
     }
+    
+    public bool IsRightMouseButtonDown()
+    {
+        // NEW INPUT SYSTEM: Right Click (for our Debug Punch)
+        return Mouse.current.rightButton.wasPressedThisFrame;
+    }
+    
+    
 }

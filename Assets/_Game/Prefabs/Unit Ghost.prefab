@@ -158,8 +158,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4e5be9888caf31d4ab2cc0811cfb1f2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
+  unitMeshRenderer: {fileID: 862347138582234407}
+  moveAction: {fileID: 8474339436307313771}
   isGhost: 1
-  meshRenderer: {fileID: 862347138582234407}
+  currentBodyData: {fileID: 0}
 --- !u!114 &8474339436307313771
 MonoBehaviour:
   m_ObjectHideFlags: 0

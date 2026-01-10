@@ -8,7 +8,21 @@ public class UnitActionSystem : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
+    }
+    
+    // Remove Start()!
+
+    public void Init()
+    {
+        // Any setup logic goes here. 
+        // For now, it might be empty, but it ensures we are "Ready".
+        Debug.Log("UnitActionSystem Ready.");
     }
 
     private void Update()
@@ -16,14 +30,32 @@ public class UnitActionSystem : MonoBehaviour
         // FIX: Use InputManager instead of Input.GetMouseButtonDown(0)
         if (InputManager.Instance.IsMouseButtonDown()) 
         {
-            Vector3 mouseWorldPosition = MouseWorld.GetPosition();
-            GridPosition gridPosition = GridSystem.Instance.GetGridPosition(mouseWorldPosition);
-            
-            // ... rest of the code remains the same ...
-            Vector3 gridWorldPosition = GridSystem.Instance.GetWorldPosition(gridPosition);
-            if (selectedUnit != null)
+            if (TryGetGridPosition(out GridPosition gridPos))
             {
-                selectedUnit.GetComponent<MoveAction>().Move(gridWorldPosition);
+                if (selectedUnit != null)
+                {
+                    Vector3 worldPos = GridSystem.Instance.GetWorldPosition(gridPos);
+                
+                    // OPTIMIZED: No GetComponent here anymore!
+                    selectedUnit.GetMoveAction().Move(worldPos);
+                }
+            }
+        }
+        
+        if (InputManager.Instance.IsRightMouseButtonDown()) 
+        {
+            if (TryGetGridPosition(out GridPosition gridPos))
+            {
+                GridObject gridObject = GridSystem.Instance.GetGridObject(gridPos);
+                Unit targetUnit = gridObject.GetUnit();
+
+                if (targetUnit != null)
+                {
+                    // Roll random damage (5-25) to test Glance/Hit/Crit
+                    int roll = Random.Range(5, 25);
+                    Debug.Log($"[DEBUG] Attacking {targetUnit.name} with Roll: {roll}");
+                    targetUnit.TakeDamage(roll);
+                }
             }
         }
     }
@@ -39,5 +71,14 @@ public class UnitActionSystem : MonoBehaviour
     public Unit GetSelectedUnit()
     {
         return selectedUnit;
+    }
+    
+    private bool TryGetGridPosition(out GridPosition gridPosition)
+    {
+        Vector3 mouseWorldPosition = MouseWorld.GetPosition();
+        gridPosition = GridSystem.Instance.GetGridPosition(mouseWorldPosition);
+        
+        // Simple bounds check (optional but good practice)
+        return GridSystem.Instance.GetGridObject(gridPosition) != null;
     }
 }

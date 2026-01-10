@@ -15,15 +15,19 @@ public class GridSystem : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null) 
+        // Singleton Only
+        if (Instance != null)
         {
-            Debug.LogError("There's more than one GridSystem! " + transform + " - " + Instance);
             Destroy(gameObject);
             return;
         }
         Instance = this;
-
+    }
+    
+    public void Init()
+    {
         CreateGrid();
+        Debug.Log("GridSystem Initialized.");
     }
 
     private void CreateGrid()
