@@ -58,4 +58,17 @@ public class GridSystem : MonoBehaviour
             Mathf.RoundToInt(worldPosition.z / cellSize)
         );
     }
+    
+    public GridObject GetGridObject(GridPosition gridPosition)
+    {
+        // Validation: Is this position actually on the board?
+        if (gridPosition.x >= 0 && gridPosition.z >= 0 && gridPosition.x < width && gridPosition.z < height)
+        {
+            return gridObjects[gridPosition.x, gridPosition.z];
+        }
+        
+        // If we ask for (-5, 100), return null instead of crashing
+        Debug.LogError("Grid Position out of bounds: " + gridPosition);
+        return null;
+    }
 }
