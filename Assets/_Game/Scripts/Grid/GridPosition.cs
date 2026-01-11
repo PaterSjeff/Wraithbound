@@ -42,4 +42,9 @@ public struct GridPosition : IEquatable<GridPosition>
     {
         return HashCode.Combine(x, z);
     }
+
+    public int Distance(GridPosition other)
+    {
+        return Math.Abs(x - other.x) + Math.Abs(z - other.z);
+    }
 }

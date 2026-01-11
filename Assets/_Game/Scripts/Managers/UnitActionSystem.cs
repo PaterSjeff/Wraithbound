@@ -1,10 +1,15 @@
+using System;
 using UnityEngine;
 
 public class UnitActionSystem : MonoBehaviour
 {
     public static UnitActionSystem Instance { get; private set; }
+    public event Action<bool> OnBusyChanged;
+    public event Action<Unit> OnSelectedUnitChanged;
 
     [SerializeField] private Unit selectedUnit; // Drag your Unit here manually for now
+    private BaseAction selectedAction;
+    private bool busy;
 
     private void Awake()
     {
@@ -16,8 +21,6 @@ public class UnitActionSystem : MonoBehaviour
         Instance = this;
     }
     
-    // Remove Start()!
-
     public void Init()
     {
         // Any setup logic goes here. 
@@ -27,34 +30,38 @@ public class UnitActionSystem : MonoBehaviour
 
     private void Update()
     {
+        if (busy) return;
+        if (!TurnManager.Instance.IsPlayerTurn()) return;
+
         // FIX: Use InputManager instead of Input.GetMouseButtonDown(0)
         if (InputManager.Instance.IsMouseButtonDown()) 
         {
-            if (TryGetGridPosition(out GridPosition gridPos))
+            HandleUnitSelection();
+        }
+    }
+
+    private void HandleUnitSelection()
+    {
+        if (TryGetGridPosition(out GridPosition gridPos))
+        {
+            if (selectedUnit != null && selectedAction != null)
             {
-                if (selectedUnit != null)
+                if (selectedAction.IsValidActionGridPosition(gridPos))
                 {
-                    Vector3 worldPos = GridSystem.Instance.GetWorldPosition(gridPos);
-                
-                    // OPTIMIZED: No GetComponent here anymore!
-                    selectedUnit.GetMoveAction().Move(worldPos);
+                    SetBusy(true);
+                    selectedAction.TakeAction(gridPos, () => SetBusy(false));
+                    return;
                 }
             }
-        }
-        
-        if (InputManager.Instance.IsRightMouseButtonDown()) 
-        {
-            if (TryGetGridPosition(out GridPosition gridPos))
-            {
-                GridObject gridObject = GridSystem.Instance.GetGridObject(gridPos);
-                Unit targetUnit = gridObject.GetUnit();
 
-                if (targetUnit != null)
+            GridObject gridObject = GridSystem.Instance.GetGridObject(gridPos);
+            Unit targetUnit = gridObject.GetUnit();
+
+            if (targetUnit != null)
+            {
+                if (!targetUnit.IsEnemy)
                 {
-                    // Roll random damage (5-25) to test Glance/Hit/Crit
-                    int roll = Random.Range(5, 25);
-                    Debug.Log($"[DEBUG] Attacking {targetUnit.name} with Roll: {roll}");
-                    targetUnit.TakeDamage(roll);
+                    SetSelectedUnit(targetUnit);
                 }
             }
         }
@@ -63,14 +70,24 @@ public class UnitActionSystem : MonoBehaviour
     public void SetSelectedUnit(Unit unit)
     {
         selectedUnit = unit;
-        
-        // Visual Feedback (Optional but helpful)
-        Debug.Log($"Possessed: {unit.name}");
+        SetSelectedAction(unit.GetAction<MoveAction>());
+        OnSelectedUnitChanged?.Invoke(unit);
+    }
+
+    public void SetSelectedAction(BaseAction action)
+    {
+        selectedAction = action;
     }
 
     public Unit GetSelectedUnit()
     {
         return selectedUnit;
+    }
+
+    private void SetBusy(bool isBusy)
+    {
+        busy = isBusy;
+        OnBusyChanged?.Invoke(busy);
     }
     
     private bool TryGetGridPosition(out GridPosition gridPosition)

@@ -4,22 +4,23 @@ public class Unit : MonoBehaviour, IDamageable
 {
     [Header("References")]
     [SerializeField] private MeshRenderer unitMeshRenderer;
-    [SerializeField] private MoveAction moveAction;
-
+    
     [Header("Identity")]
-    [SerializeField] private bool isGhost = false; 
+    [SerializeField] private bool isGhost = false;
+    public bool IsGhost => isGhost;
+    [SerializeField] private bool isEnemy = false;
+    public bool IsEnemy => isEnemy;
     
     [Header("Stats")]
     [SerializeField] private BodyData_SO currentBodyData;
 
     private GridPosition gridPosition;
     private int currentStructure;
+    private BaseAction[] unitActions;
 
-    // EDITOR ONLY: Auto-assigns components when you add the script!
-    private void Reset()
+    private void Awake()
     {
-        unitMeshRenderer = GetComponentInChildren<MeshRenderer>();
-        moveAction = GetComponent<MoveAction>();
+        unitActions = GetComponents<BaseAction>();
     }
 
     private void Start()
@@ -48,26 +49,27 @@ public class Unit : MonoBehaviour, IDamageable
             GridObject oldGridObject = GridSystem.Instance.GetGridObject(gridPosition);
             GridObject newGridObject = GridSystem.Instance.GetGridObject(newGridPosition);
 
-            Unit targetUnit = newGridObject.GetUnit();
-            if (targetUnit != null)
-            {
-                if (isGhost && !targetUnit.isGhost)
-                {
-                    PerformPossession(targetUnit);
-                    return; 
-                }
-            }
-
             oldGridObject.SetUnit(null);
             newGridObject.SetUnit(this);
             gridPosition = newGridPosition;
         }
     }
 
-    // Public getter avoids GetComponent in other scripts
-    public MoveAction GetMoveAction()
+    public T GetAction<T>() where T : BaseAction
     {
-        return moveAction;
+        foreach (BaseAction action in unitActions)
+        {
+            if (action is T)
+            {
+                return (T)action;
+            }
+        }
+        return null;
+    }
+
+    public GridPosition GetGridPosition()
+    {
+        return gridPosition;
     }
 
     public void PerformPossession(Unit targetBody)
