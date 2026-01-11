@@ -123,6 +123,7 @@ GameObject:
   - component: {fileID: 5231231522780160086}
   - component: {fileID: 1710527910856961702}
   - component: {fileID: 8725428637943418361}
+  - component: {fileID: 7369495260738272899}
   m_Layer: 0
   m_Name: Unit
   m_TagString: Untagged
@@ -159,8 +160,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
   unitMeshRenderer: {fileID: 3021246604328778971}
-  moveAction: {fileID: 8725428637943418361}
   isGhost: 0
+  isEnemy: 0
   currentBodyData: {fileID: 11400000, guid: 281506ad2567f3441ab321cd07b17646, type: 2}
 --- !u!114 &8725428637943418361
 MonoBehaviour:
@@ -175,4 +176,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoveAction
   moveSpeed: 4
+  maxMoveDistance: 4
   unitAnimator: {fileID: 0}
+--- !u!114 &7369495260738272899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7732180633893930541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33e478e332cd65b4bb989c2f05cf897d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AttackAction
+  maxAttackRange: 1

@@ -65,14 +65,20 @@ public class GridSystem : MonoBehaviour
     
     public GridObject GetGridObject(GridPosition gridPosition)
     {
-        // Validation: Is this position actually on the board?
-        if (gridPosition.x >= 0 && gridPosition.z >= 0 && gridPosition.x < width && gridPosition.z < height)
+        if (IsValidGridPosition(gridPosition))
         {
             return gridObjects[gridPosition.x, gridPosition.z];
         }
         
-        // If we ask for (-5, 100), return null instead of crashing
-        Debug.LogError("Grid Position out of bounds: " + gridPosition);
+        // Return null silently (preferable for gameplay checks) or log error if critical
         return null;
+    }
+    
+    public bool IsValidGridPosition(GridPosition gridPosition)
+    {
+        return gridPosition.x >= 0 && 
+               gridPosition.z >= 0 && 
+               gridPosition.x < width && 
+               gridPosition.z < height;
     }
 }

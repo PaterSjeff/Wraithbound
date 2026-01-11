@@ -39,6 +39,15 @@ public class GameManager : MonoBehaviour
 
         // 3. The Unit System (Using the Inspector Reference)
         unitActionSystem.Init();
+        
+        Unit[] allUnits = FindObjectsOfType<Unit>();
+        foreach (Unit unit in allUnits)
+        {
+            unit.Init();
+        }
+
+        // 4. The Unit Action System
+        unitActionSystem.Init();
 
         Debug.Log("Boot Complete. Game Loop Started.");
     }

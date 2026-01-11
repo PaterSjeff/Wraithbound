@@ -23,15 +23,28 @@ public class Unit : MonoBehaviour, IDamageable
         unitActions = GetComponents<BaseAction>();
     }
 
-    private void Start()
+    public void Init()
     {
         gridPosition = GridSystem.Instance.GetGridPosition(transform.position);
         transform.position = GridSystem.Instance.GetWorldPosition(gridPosition);
         
         GridObject startNode = GridSystem.Instance.GetGridObject(gridPosition);
-        if (startNode != null && startNode.GetUnit() == null)
+        
+        // Safety Check: In case the unit was placed on an invalid tile
+        if (startNode != null) 
         {
-            startNode.SetUnit(this);
+            if (startNode.GetUnit() == null)
+            {
+                startNode.SetUnit(this);
+            }
+            else
+            {
+                Debug.LogError($"Unit {name} is trying to spawn on tile {gridPosition}, but {startNode.GetUnit().name} is already there!");
+            }
+        }
+        else 
+        {
+            Debug.LogError($"Unit {name} spawned outside the Grid Boundaries at {gridPosition}!");
         }
 
         if (currentBodyData != null)

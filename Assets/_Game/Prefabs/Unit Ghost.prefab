@@ -123,6 +123,7 @@ GameObject:
   - component: {fileID: 517743819826621115}
   - component: {fileID: 812444210822350810}
   - component: {fileID: 8474339436307313771}
+  - component: {fileID: 8675037656829271362}
   m_Layer: 0
   m_Name: Unit Ghost
   m_TagString: Untagged
@@ -159,8 +160,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
   unitMeshRenderer: {fileID: 862347138582234407}
-  moveAction: {fileID: 8474339436307313771}
   isGhost: 1
+  isEnemy: 0
   currentBodyData: {fileID: 0}
 --- !u!114 &8474339436307313771
 MonoBehaviour:
@@ -175,4 +176,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoveAction
   moveSpeed: 4
+  maxMoveDistance: 4
   unitAnimator: {fileID: 0}
+--- !u!114 &8675037656829271362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6107381117183193286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14a54e4901472f941a99ce9e104dfc33, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PossessAction
+  maxPossessRange: 1
