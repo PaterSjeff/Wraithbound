@@ -8,6 +8,9 @@ public class GridSystem : MonoBehaviour
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
     [SerializeField] private float cellSize = 2f; // Keep spacing for isometric view
+    
+    // NEW: The layer we check for walls
+    [SerializeField] private LayerMask obstaclesLayerMask;
 
     private GridObject[,] gridObjects;
     
@@ -39,7 +42,23 @@ public class GridSystem : MonoBehaviour
             {
                 // Create the data container for this tile
                 GridPosition gridPos = new GridPosition(x, z);
-                gridObjects[x, z] = new GridObject(this, gridPos);
+                GridObject gridObject = new GridObject(this, gridPos);
+                gridObjects[x, z] = gridObject;
+                
+                // We cast a ray from high up (World Y + 100) straight down.
+                // If it hits anything on the 'Obstacles' layer, this tile is NOT walkable.
+                Vector3 worldPosition = GetWorldPosition(gridPos);
+                float raycastOffsetDistance = 5f;
+                
+                // Note: We scan from the center of the cell to avoid edge cases
+                if (Physics.Raycast(
+                        worldPosition + Vector3.down * raycastOffsetDistance, 
+                        Vector3.up, 
+                        raycastOffsetDistance * 2, 
+                        obstaclesLayerMask))
+                {
+                    gridObject.SetIsWalkable(false);
+                }
                 
                 Transform debugTransform = Instantiate(gridDebugObjectPrefab, GetWorldPosition(gridPos), Quaternion.identity);
                 GridDebugObject gridDebugObject = debugTransform.GetComponent<GridDebugObject>();

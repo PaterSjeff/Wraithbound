@@ -1,10 +1,15 @@
+// Path: Scripts/Grid/GridObject.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GridObject 
 {
-    private GridSystem gridSystem;
     private GridPosition gridPosition;
-    private Unit unitOnTile;
+    private GridSystem gridSystem;
+    private Unit unit;
+    
+    // NEW: Track if this specific tile is walkable
+    private bool isWalkable = true;
 
     public GridObject(GridSystem gridSystem, GridPosition gridPosition)
     {
@@ -12,19 +17,22 @@ public class GridObject
         this.gridPosition = gridPosition;
     }
 
-    // We will use this later to determine if a move is valid
-    public void SetUnit(Unit unit)
+    public void SetUnit(Unit unit) => this.unit = unit;
+    public Unit GetUnit() => unit;
+
+    // NEW: Getters and Setters for walkability
+    public void SetIsWalkable(bool isWalkable)
     {
-        this.unitOnTile = unit;
+        this.isWalkable = isWalkable;
     }
 
-    public Unit GetUnit()
+    public bool IsWalkable()
     {
-        return unitOnTile;
+        return isWalkable;
     }
 
     public override string ToString()
     {
-        return gridPosition.ToString() + "\n" + (unitOnTile != null ? unitOnTile.name : "Empty");
+        return gridPosition.ToString() + "\n" + unit;
     }
 }

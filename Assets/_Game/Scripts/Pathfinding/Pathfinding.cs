@@ -83,10 +83,15 @@ public class Pathfinding : MonoBehaviour
             {
                 if (closedList.Contains(neighbourNode)) continue;
                 
-                // Collision Check: Ask GridSystem if this tile is occupied
-                // We allow the "End Node" to be occupied (for melee attacks later)
-                // But we cannot walk THROUGH an occupied node.
-                bool isOccupied = GridSystem.Instance.GetGridObject(neighbourNode.GetGridPosition()).GetUnit() != null;
+                GridObject neighbourGridObject = GridSystem.Instance.GetGridObject(neighbourNode.GetGridPosition());
+                
+                if (!neighbourGridObject.IsWalkable())
+                {
+                    closedList.Add(neighbourNode);
+                    continue;
+                }
+                
+                bool isOccupied = neighbourGridObject.GetUnit() != null;
                 
                 if (isOccupied && neighbourNode != endNode)
                 {
