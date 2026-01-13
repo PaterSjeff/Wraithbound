@@ -92,13 +92,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 35
+  m_fontSizeBase: 35
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 6569083664085588723}
   - component: {fileID: 7777783840988534853}
   - component: {fileID: 7985694038256557633}
+  - component: {fileID: 5404491386383752431}
   m_Layer: 5
   m_Name: ActionButton_Prefab
   m_TagString: Untagged
@@ -258,3 +259,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5404491386383752431
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2211008674402762528}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b07cd1b09adfc374cb3bb012f2e15b5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ActionButtonUI
+  textMeshPro: {fileID: 6937365825787456388}
+  button: {fileID: 7985694038256557633}
+  selectedVisual: {fileID: 0}

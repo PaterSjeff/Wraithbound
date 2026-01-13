@@ -177,4 +177,9 @@ public class Pathfinding : MonoBehaviour
         }
         return gridPositionList;
     }
+    
+    public bool HasPath(GridPosition startGridPosition, GridPosition endGridPosition)
+    {
+        return FindPath(startGridPosition, endGridPosition) != null;
+    }
 }

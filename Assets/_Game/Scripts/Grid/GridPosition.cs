@@ -1,7 +1,5 @@
 using System;
 
-// Structs are value types, perfect for simple data like coordinates.
-// Implementing IEquatable lets us use this as a Dictionary Key later if needed.
 public struct GridPosition : IEquatable<GridPosition>
 {
     public int x;
@@ -12,6 +10,18 @@ public struct GridPosition : IEquatable<GridPosition>
         this.x = x;
         this.z = z;
     }
+
+    // --- NEW: MATH OPERATORS (Fixes Error CS0019) ---
+    public static GridPosition operator +(GridPosition a, GridPosition b)
+    {
+        return new GridPosition(a.x + b.x, a.z + b.z);
+    }
+
+    public static GridPosition operator -(GridPosition a, GridPosition b)
+    {
+        return new GridPosition(a.x - b.x, a.z - b.z);
+    }
+    // ------------------------------------------------
 
     public override string ToString()
     {

@@ -1,59 +1,63 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PossessAction : BaseAction
 {
-    [SerializeField] private int maxPossessRange = 1;
+    [SerializeField] private int maxPossessRange = 2; // Slightly longer than attack
 
-    public override string GetActionName()
-    {
-        return "Possess";
-    }
+    public override string GetActionName() => "Possess";
 
     public override void TakeAction(GridPosition gridPosition, Action onActionComplete)
     {
         Unit targetUnit = GridSystem.Instance.GetGridObject(gridPosition).GetUnit();
-        // Visual flair: Orient towards the target before possessing
-        transform.LookAt(GridSystem.Instance.GetWorldPosition(gridPosition)); 
+        
+        // Logic handled in Unit, but Action wrapper handles the flow
         unit.PerformPossession(targetUnit);
-        onActionComplete();
+
+        BaseActionStart(onActionComplete);
+        BaseActionComplete(); // Ends immediately
     }
 
     public override bool IsValidActionGridPosition(GridPosition gridPosition)
     {
-        // 1. Check if the tile is valid
-        if (!GridSystem.Instance.IsValidGridPosition(gridPosition)) return false;
+        List<GridPosition> validGridPositionList = GetValidActionGridPositionList();
+        return validGridPositionList.Contains(gridPosition);
+    }
 
-        GridObject gridObject = GridSystem.Instance.GetGridObject(gridPosition);
-        Unit targetUnit = gridObject.GetUnit();
+    public override List<GridPosition> GetValidActionGridPositionList()
+    {
+        List<GridPosition> validGridPositionList = new List<GridPosition>();
+        GridPosition unitGridPosition = unit.GetGridPosition();
 
-        // 2. Check if there is a unit there
-        if (targetUnit == null)
+        for (int x = -maxPossessRange; x <= maxPossessRange; x++)
         {
-            // Valid behavior: Don't log here (it spams for empty tiles)
-            return false;
-        }
+            for (int z = -maxPossessRange; z <= maxPossessRange; z++)
+            {
+                GridPosition offsetGridPosition = new GridPosition(x, z);
+                GridPosition testGridPosition = unitGridPosition + offsetGridPosition;
 
-        // 3. Team Check (This is the likely error)
-        if (targetUnit.IsEnemy == unit.IsEnemy)
-        {
-            Debug.Log($"Possess Failed: Target {targetUnit.name} is on the same team ({unit.IsEnemy}).");
-            return false;
-        }
+                if (!GridSystem.Instance.IsValidGridPosition(testGridPosition)) continue;
 
-        // 4. Distance Check (Manhattan vs Diagonal?)
-        // Note: Make sure your GridPosition struct has a valid Distance check!
-        // If using Manhattan distance, diagonals = 2 (Invalid for Range 1).
-        // Try increasing Range to 2 in Inspector to test.
-        int distance = Math.Abs(gridPosition.x - unit.GetGridPosition().x) + 
-                       Math.Abs(gridPosition.z - unit.GetGridPosition().z);
-        
-        if (distance > maxPossessRange)
-        {
-            Debug.Log($"Possess Failed: Target too far ({distance} > {maxPossessRange})");
-            return false;
-        }
+                int testDistance = Mathf.Abs(x) + Mathf.Abs(z);
+                if (testDistance > maxPossessRange) continue;
 
-        return true;
+                Unit targetUnit = GridSystem.Instance.GetGridObject(testGridPosition).GetUnit();
+                
+                // Can only possess UNITS
+                if (targetUnit == null) continue;
+                
+                // Can only possess ENEMIES
+                if (targetUnit.IsEnemy == unit.IsEnemy) continue;
+
+                validGridPositionList.Add(testGridPosition);
+            }
+        }
+        return validGridPositionList;
+    }
+
+    public override int GetActionPointsCost()
+    {
+        return 2; // Ends Turn
     }
 }
