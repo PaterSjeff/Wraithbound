@@ -45,10 +45,7 @@ public class GameManager : MonoBehaviour
         {
             unit.Init();
         }
-
-        // 4. The Unit Action System
-        unitActionSystem.Init();
-
+        
         Debug.Log("Boot Complete. Game Loop Started.");
     }
 }
