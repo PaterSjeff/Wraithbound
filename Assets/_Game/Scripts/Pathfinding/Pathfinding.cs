@@ -8,10 +8,9 @@ public class Pathfinding : MonoBehaviour
     // Standard A* Costs
     private const int MOVE_STRAIGHT_COST = 10;
 
-    [SerializeField] private int width = 10;
-    [SerializeField] private int height = 10;
-    
     private PathNode[,] pathNodes;
+    private int width;
+    private int height;
 
     private void Awake()
     {
@@ -21,23 +20,31 @@ public class Pathfinding : MonoBehaviour
             return;
         }
         Instance = this;
-        
-        // Ensure this matches GridSystem size if hardcoded, 
-        // ideally getting these values from GridSystem is cleaner 
-        // but for this prototype stage, this works.
+    }
+
+    public void Init()
+    {
+        if (GridSystem.Instance == null) return;
+        width = GridSystem.Instance.Width;
+        height = GridSystem.Instance.Height;
         pathNodes = new PathNode[width, height];
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
-            {
                 pathNodes[x, z] = new PathNode(new GridPosition(x, z));
-            }
         }
+    }
+
+    private void EnsureInited()
+    {
+        if (pathNodes != null) return;
+        Init();
     }
 
     public List<GridPosition> FindPath(GridPosition startGridPosition, GridPosition endGridPosition)
     {
-        // Validation
+        EnsureInited();
+        if (pathNodes == null) return null;
         if (!GridSystem.Instance.IsValidGridPosition(endGridPosition)) return null;
         if (!GridSystem.Instance.IsValidGridPosition(startGridPosition)) return null;
 

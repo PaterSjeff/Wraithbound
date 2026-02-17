@@ -47,16 +47,20 @@ public class UnitActionSystem : MonoBehaviour
         }
     }
 
+    private bool IsActiveUnit(Unit unit)
+    {
+        return TurnManager.Instance.GetActiveUnit() == unit;
+    }
+
     private void HandleUnitSelection()
     {
         // 1. TRY TO MOVE/ACT
         GridPosition mouseGridPosition = GridSystem.Instance.GetGridPosition(MouseWorld.GetPosition());
 
-        if (selectedUnit != null && selectedAction != null)
+        if (selectedUnit != null && selectedAction != null && IsActiveUnit(selectedUnit))
         {
             if (selectedAction.IsValidActionGridPosition(mouseGridPosition))
             {
-                // Can we afford it?
                 if (selectedUnit.CanSpendActionPointsToTakeAction(selectedAction))
                 {
                     SetBusy();
@@ -67,7 +71,6 @@ public class UnitActionSystem : MonoBehaviour
             }
         }
 
-        // 2. TRY TO SELECT A UNIT
         if (TryHandleUnitSelection()) return;
     }
 
@@ -80,6 +83,7 @@ public class UnitActionSystem : MonoBehaviour
             {
                 if (unit == selectedUnit) return false;
                 if (unit.IsEnemy) return false;
+                if (TurnManager.Instance.IsPlayerTurn() && !IsActiveUnit(unit)) return false;
 
                 SetSelectedUnit(unit);
                 return true;
@@ -91,8 +95,10 @@ public class UnitActionSystem : MonoBehaviour
     public void SetSelectedUnit(Unit unit)
     {
         selectedUnit = unit;
-        // Default to Move Action when selecting a new unit
-        SetSelectedAction(unit.GetAction<MoveAction>());
+        BaseAction defaultAction = unit.GetAction<MoveAction>();
+        if (defaultAction == null && unit.GetActions() != null && unit.GetActions().Length > 0)
+            defaultAction = unit.GetActions()[0];
+        SetSelectedAction(defaultAction);
         OnSelectedUnitChanged?.Invoke(unit);
     }
 
@@ -126,5 +132,15 @@ public class UnitActionSystem : MonoBehaviour
     {
         isBusy = false;
         OnBusyChanged?.Invoke(isBusy);
+        
+        // Clear all highlights and hover previews after action completes
+        if (TileHighlightManager.Instance != null)
+        {
+            TileHighlightManager.Instance.ClearHighlights();
+            TileHighlightManager.Instance.ClearHover();
+        }
+        
+        // Deselect the action after it completes
+        SetSelectedAction(null);
     }
 }

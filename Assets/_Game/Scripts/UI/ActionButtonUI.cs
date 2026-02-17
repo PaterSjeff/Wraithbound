@@ -34,15 +34,15 @@ public class ActionButtonUI : MonoBehaviour
         // THE LOGIC YOU ASKED FOR (Graying Out)
         // --------------------------------------------------------
         Unit unit = UnitActionSystem.Instance.GetSelectedUnit();
-        
-        // 1. Check Action Points (Has Moved? Turn Over?)
+        if (unit == null)
+        {
+            button.interactable = false;
+            return;
+        }
+
         bool canAfford = unit.CanSpendActionPointsToTakeAction(action);
-        
-        // 2. Check Targets (Is anyone in range?)
-        // (Only strictly necessary for Attack/Possess, but safe for all)
         bool hasTargets = action.GetValidActionGridPositionList().Count > 0;
 
-        // COMBINED CHECK
         if (canAfford && hasTargets)
         {
             button.interactable = true;

@@ -1,23 +1,29 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TurnManager : MonoBehaviour
 {
     public static TurnManager Instance { get; private set; }
 
-    // Event fired whenever the Phase changes (e.g., Player -> Enemy)
+    /// <summary>Fired when the active unit changes (whose turn it is).</summary>
+    public event Action<Unit> OnActiveUnitChanged;
+
+    /// <summary>Fired when turn state changes (for UI refresh).</summary>
     public event Action OnTurnChanged;
 
-    public enum TurnPhase
-    {
-        Player,
-        Enemy,
-        Neutral // For "Other" units or Environmental effects later
-    }
+    /// <summary>Fired when a new round starts.</summary>
+    public event Action OnRoundStarted;
 
-    private TurnPhase currentPhase = TurnPhase.Player;
-    private int turnNumber = 1;
+    /// <summary>Fired when combat ends. True = player won, false = player lost.</summary>
+    public event Action<bool> OnCombatEnded;
+
+    private List<Unit> initiativeQueue = new List<Unit>();
+    private int queueIndex;
+    private Unit activeUnit;
+    private int roundNumber = 1;
+    private bool combatEnded;
 
     private void Awake()
     {
@@ -29,65 +35,126 @@ public class TurnManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
+    /// <summary>Call after all units are in the scene and initialized (e.g. from GameManager).</summary>
+    public void StartFirstRound()
     {
-        // Optional: Ensure we start correctly
-        OnTurnChanged?.Invoke();
+        combatEnded = false;
+        roundNumber = 1;
+        BuildInitiativeQueue();
+        OnRoundStarted?.Invoke();
+        AdvanceToNextTurn();
     }
 
-    public void NextTurn()
+    /// <summary>Player or AI calls this when the current unit is done with their turn.</summary>
+    public void RequestEndTurn()
     {
-        // Cycle the phases: Player -> Enemy -> Neutral -> Player
-        switch (currentPhase)
-        {
-            case TurnPhase.Player:
-                currentPhase = TurnPhase.Enemy;
-                StartCoroutine(EnemyTurnRoutine());
-                break;
-                
-            case TurnPhase.Enemy:
-                currentPhase = TurnPhase.Neutral;
-                StartCoroutine(NeutralTurnRoutine());
-                break;
+        AdvanceToNextTurn();
+    }
 
-            case TurnPhase.Neutral:
-                turnNumber++;
-                currentPhase = TurnPhase.Player;
-                break;
+    public Unit GetActiveUnit() => activeUnit;
+
+    /// <summary>True when it is a player-controlled unit's turn (waiting for input).</summary>
+    public bool IsPlayerTurn()
+    {
+        return activeUnit != null && !activeUnit.IsEnemy;
+    }
+
+    public bool IsEnemyTurn()
+    {
+        return activeUnit != null && activeUnit.IsEnemy;
+    }
+
+    public int GetRoundNumber() => roundNumber;
+
+    /// <summary>Ordered list of units in initiative order for this round (for UI).</summary>
+    public IReadOnlyList<Unit> GetInitiativeOrder() => initiativeQueue;
+
+    /// <summary>Current position in the initiative queue (for UI).</summary>
+    public int GetCurrentQueueIndex() => queueIndex;
+
+    private void BuildInitiativeQueue()
+    {
+        initiativeQueue.Clear();
+        Unit[] allUnits = FindObjectsOfType<Unit>();
+        var entries = new List<(Unit unit, int turnIndex)>();
+        foreach (Unit u in allUnits)
+        {
+            int turns = Mathf.Max(1, u.GetTurnsPerRound());
+            for (int i = 0; i < turns; i++)
+                entries.Add((u, i));
+        }
+        entries.Sort((a, b) =>
+        {
+            int ti = a.turnIndex.CompareTo(b.turnIndex);
+            if (ti != 0) return ti;
+            return b.unit.GetSpeed().CompareTo(a.unit.GetSpeed());
+        });
+        foreach (var e in entries)
+            initiativeQueue.Add(e.unit);
+        queueIndex = 0;
+    }
+
+    private void AdvanceToNextTurn()
+    {
+        if (combatEnded) return;
+        CheckCombatEnd();
+        if (combatEnded) return;
+        OnTurnChanged?.Invoke();
+
+        while (queueIndex < initiativeQueue.Count)
+        {
+            Unit next = initiativeQueue[queueIndex];
+            queueIndex++;
+            if (next == null || !next.gameObject.activeInHierarchy)
+                continue;
+
+            activeUnit = next;
+            activeUnit.StartTurn();
+            OnActiveUnitChanged?.Invoke(activeUnit);
+
+            if (activeUnit.IsEnemy)
+            {
+                StartCoroutine(EnemyTurnRoutine());
+                return;
+            }
+
+            if (!activeUnit.IsEnemy)
+            {
+                UnitActionSystem.Instance?.SetSelectedUnit(activeUnit);
+                return;
+            }
         }
 
-        Debug.Log($"Phase Changed: {currentPhase} (Turn {turnNumber})");
-        OnTurnChanged?.Invoke();
+        activeUnit = null;
+        queueIndex = 0;
+        roundNumber++;
+        BuildInitiativeQueue();
+        OnRoundStarted?.Invoke();
+        if (initiativeQueue.Count > 0)
+            AdvanceToNextTurn();
+    }
+
+    private void CheckCombatEnd()
+    {
+        Unit[] all = FindObjectsOfType<Unit>();
+        int players = 0, enemies = 0;
+        foreach (Unit u in all)
+        {
+            if (u == null || !u.gameObject.activeInHierarchy) continue;
+            if (u.IsEnemy) enemies++; else players++;
+        }
+        if (players == 0) { combatEnded = true; OnCombatEnded?.Invoke(false); return; }
+        if (enemies == 0) { combatEnded = true; OnCombatEnded?.Invoke(true); return; }
     }
 
     private IEnumerator EnemyTurnRoutine()
     {
-        // Wait 2 seconds as requested (simulating "Thinking" time)
-        yield return new WaitForSeconds(2f);
-        
-        // In the future, this is where you would call: EnemyAI.Instance.TakeAction();
-        // For now, it just skips back to the next phase.
-        NextTurn();
+        yield return new WaitForSeconds(0.3f);
+        AIBrain brain = activeUnit != null ? activeUnit.GetComponent<AIBrain>() : null;
+        if (brain != null)
+            yield return brain.ExecuteTurnCoroutine();
+        else
+            yield return new WaitForSeconds(0.5f);
+        RequestEndTurn();
     }
-
-    private IEnumerator NeutralTurnRoutine()
-    {
-        // Short pause for "Other" units
-        yield return new WaitForSeconds(0.5f);
-        NextTurn();
-    }
-
-    // Helper for UI and Input blocking
-    public bool IsPlayerTurn()
-    {
-        return currentPhase == TurnPhase.Player;
-    }
-
-    // Helper for AI logic later
-    public bool IsEnemyTurn()
-    {
-        return currentPhase == TurnPhase.Enemy;
-    }
-
-    public int GetTurnNumber() => turnNumber;
 }

@@ -4,8 +4,7 @@ using UnityEngine;
 
 public abstract class BaseAction : MonoBehaviour
 {
-    // Standardize 'isActive' vs 'isActionInProgress'
-    protected bool isActive; 
+    protected bool isActive;
     protected Unit unit;
     protected Action onActionComplete;
 
@@ -14,11 +13,9 @@ public abstract class BaseAction : MonoBehaviour
         unit = GetComponent<Unit>();
     }
 
-    // --- CONTRACT METHODS (Must be implemented by children) ---
     public abstract string GetActionName();
     public abstract void TakeAction(GridPosition gridPosition, Action onActionComplete);
-    
-    // Default implementations (can be overridden)
+
     public virtual bool IsValidActionGridPosition(GridPosition gridPosition)
     {
         return false;
@@ -29,24 +26,23 @@ public abstract class BaseAction : MonoBehaviour
         return new List<GridPosition>();
     }
 
-    public abstract int GetActionPointsCost();
+    public abstract ActionResourceType GetActionResourceType();
 
-    // --- HELPER METHODS ---
+    public virtual bool CanExecute() => false;
+
+    public virtual int GetManaCost() => 0;
+
     protected void BaseActionStart(Action onActionComplete)
     {
         isActive = true;
         this.onActionComplete = onActionComplete;
-        
-        // Notify the System (for UI)
         UnitActionSystem.Instance.InvokeOnActionStarted(this);
     }
 
     protected void BaseActionComplete()
     {
         isActive = false;
-        onActionComplete();
-
-        // Notify the System (for UI)
+        onActionComplete?.Invoke();
         UnitActionSystem.Instance.InvokeOnActionCompleted(this);
     }
 }

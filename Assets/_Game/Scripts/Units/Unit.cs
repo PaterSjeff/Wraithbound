@@ -1,115 +1,127 @@
 using UnityEngine;
 using System;
+using DG.Tweening;
 
 public class Unit : MonoBehaviour, IDamageable
 {
-    // Event to update UI (e.g. gray out unit)
-    public event Action OnActionPointsChanged; 
+    public event Action OnActionPointsChanged;
 
     [Header("References")]
     [SerializeField] private MeshRenderer unitMeshRenderer;
-    
+
+    [Header("Damage Flash Settings")]
+    [SerializeField] private Color damageFlashColor = Color.red;
+    [SerializeField] private float damageFlashDuration = 0.15f;
+    [SerializeField] private float damagePunchScale = 0.1f;
+    [SerializeField] private float damagePunchDuration = 0.25f;
+
     [Header("Identity")]
-    [SerializeField] private bool isGhost = false;
-    public bool IsGhost => isGhost;
     [SerializeField] private bool isEnemy = false;
     public bool IsEnemy => isEnemy;
-    
-    [Header("Stats")]
-    [SerializeField] private BodyData_SO currentBodyData;
+
+    [Header("Data (overrides serialized stats when set)")]
+    [SerializeField] private UnitData_SO unitData;
+
+    [Header("Stats (used when UnitData is not set)")]
+    [SerializeField] private int maxStructure = 3;
+    [SerializeField] private int speed = 10;
+    [SerializeField] private int turnsPerRound = 1;
+    [SerializeField] private int movesPerTurn = 1;
+    [SerializeField] private int attacksPerTurn = 1;
+    [SerializeField] private int maxMana = 5;
 
     private GridPosition gridPosition;
-    private int currentStructure;
+    private int currentHP;
+    private int currentMana;
     private BaseAction[] unitActions;
+    private int movesRemaining;
+    private int attacksRemaining;
 
-    // --- TURN STATE ---
-    private bool hasMoved;
-    private bool isTurnOver;
+    public UnitData_SO UnitData => unitData;
+    public int CurrentHP => currentHP;
 
     private void Awake()
     {
         unitActions = GetComponents<BaseAction>();
+        
+        // Auto-find MeshRenderer if not assigned
+        if (unitMeshRenderer == null)
+            unitMeshRenderer = GetComponentInChildren<MeshRenderer>();
     }
 
     public void Init()
     {
         gridPosition = GridSystem.Instance.GetGridPosition(transform.position);
         transform.position = GridSystem.Instance.GetWorldPosition(gridPosition);
-        
+
         GridObject startNode = GridSystem.Instance.GetGridObject(gridPosition);
         if (startNode != null && startNode.GetUnit() == null)
-        {
             startNode.SetUnit(this);
-        }
 
-        if (currentBodyData != null)
+        int maxHp = unitData != null ? unitData.maxHP : maxStructure;
+        int maxM = unitData != null ? unitData.maxMana : maxMana;
+        currentHP = maxHp;
+        currentMana = maxM;
+
+        // Initialize actions from UnitData if available
+        if (unitData != null)
         {
-            currentStructure = currentBodyData.maxStructure;
+            UnitActionInitializer.InitializeActions(this);
+            unitActions = GetComponents<BaseAction>();
         }
-
-        // CRITICAL: Listen for the turn to reset flags
-        TurnManager.Instance.OnTurnChanged += TurnManager_OnTurnChanged;
     }
+
+    public void StartTurn()
+    {
+        int moves = unitData != null ? unitData.movesPerTurn : movesPerTurn;
+        int attacks = unitData != null ? unitData.attacksPerTurn : attacksPerTurn;
+        movesRemaining = moves;
+        attacksRemaining = attacks;
+        OnActionPointsChanged?.Invoke();
+    }
+
+    public bool CanMove() => movesRemaining > 0;
+    public bool CanAttack() => attacksRemaining > 0;
+    public void SpendMove() { movesRemaining--; OnActionPointsChanged?.Invoke(); }
+    public void SpendAttack() { attacksRemaining--; OnActionPointsChanged?.Invoke(); }
+
+    public int GetCurrentMana() => currentMana;
+    public bool CanSpendMana(int amount) => currentMana >= amount;
+    public void SpendMana(int amount) { currentMana -= amount; OnActionPointsChanged?.Invoke(); }
+
+    public int GetSpeed() => unitData != null ? unitData.speed : speed;
+    public int GetTurnsPerRound() => unitData != null ? unitData.turnsPerRound : turnsPerRound;
+    public int GetMoveRange() => unitData != null ? unitData.moveRange : 4;
+    public int GetAttackRange() => unitData != null ? unitData.attackRange : 1;
+    public int GetAttackDamage() => unitData != null ? unitData.attackDamage : 1;
 
     private void Update()
     {
         GridPosition newGridPosition = GridSystem.Instance.GetGridPosition(transform.position);
-
         if (newGridPosition != gridPosition)
         {
             GridObject oldGridObject = GridSystem.Instance.GetGridObject(gridPosition);
             GridObject newGridObject = GridSystem.Instance.GetGridObject(newGridPosition);
-
-            oldGridObject.SetUnit(null);
-            newGridObject.SetUnit(this);
+            oldGridObject?.SetUnit(null);
+            newGridObject?.SetUnit(this);
             gridPosition = newGridPosition;
-        }
-    }
-
-    // --- TURN LOGIC ---
-
-    private void TurnManager_OnTurnChanged()
-    {
-        // If it is the Player Phase and I am a Player Unit -> Reset
-        // If it is the Enemy Phase and I am an Enemy -> Reset
-        if ((TurnManager.Instance.IsPlayerTurn() && !isEnemy) || 
-            (!TurnManager.Instance.IsPlayerTurn() && isEnemy))
-        {
-            hasMoved = false;
-            isTurnOver = false;
-            OnActionPointsChanged?.Invoke();
         }
     }
 
     public bool CanSpendActionPointsToTakeAction(BaseAction action)
     {
-        if (isTurnOver) return false;
-
-        // RULE: You can only move once
-        if (action is MoveAction)
-        {
-            if (hasMoved) return false; 
-        }
-
-        // RULE: You can always Attack/Possess if your turn isn't over
-        return true; 
+        return action != null && action.CanExecute();
     }
 
     public void SpendActionPoints(BaseAction action)
     {
-        if (action is MoveAction)
-        {
-            hasMoved = true;
-        }
-        else
-        {
-            // Any other action ends the turn
-            isTurnOver = true;
-        }
+        if (action == null) return;
+        var resourceType = action.GetActionResourceType();
+        if (resourceType == ActionResourceType.Move) SpendMove();
+        else if (resourceType == ActionResourceType.Attack) SpendAttack();
+        else if (resourceType == ActionResourceType.Ability && action.GetManaCost() > 0) SpendMana(action.GetManaCost());
         OnActionPointsChanged?.Invoke();
     }
-    
-    // ---------------------
 
     public T GetAction<T>() where T : BaseAction
     {
@@ -120,31 +132,51 @@ public class Unit : MonoBehaviour, IDamageable
         return null;
     }
 
+    public BaseAction[] GetActions() => unitActions;
+
     public GridPosition GetGridPosition() => gridPosition;
 
-    public void PerformPossession(Unit targetBody)
+    public void SetGridPosition(GridPosition newPos)
     {
-        if (targetBody.unitMeshRenderer != null)
-        {
-            targetBody.unitMeshRenderer.material.color = Color.blue;
-        }
-        
-        UnitActionSystem.Instance.SetSelectedUnit(targetBody);
-        GridSystem.Instance.GetGridObject(gridPosition).SetUnit(null);
-        Destroy(gameObject);
+        GridObject oldCell = GridSystem.Instance.GetGridObject(gridPosition);
+        GridObject newCell = GridSystem.Instance.GetGridObject(newPos);
+        oldCell?.SetUnit(null);
+        newCell?.SetUnit(this);
+        gridPosition = newPos;
+        transform.position = GridSystem.Instance.GetWorldPosition(newPos);
     }
 
     public void TakeDamage(int incomingDamage)
     {
-        if (currentBodyData == null) return;
-        currentStructure -= 1; // Simplified for brevity
-        if (currentStructure <= 0) Die();
+        currentHP -= incomingDamage;
+        
+        // Color flash
+        if (unitMeshRenderer != null && unitMeshRenderer.material != null)
+        {
+            Material mat = unitMeshRenderer.material;
+            Color originalColor = mat.color;
+            
+            mat.DOKill();
+            
+            Sequence damageSeq = DOTween.Sequence();
+            damageSeq.Append(mat.DOColor(damageFlashColor, damageFlashDuration));
+            damageSeq.Append(mat.DOColor(originalColor, damageFlashDuration));
+        }
+        
+        // Scale punch
+        if (damagePunchScale > 0)
+        {
+            transform.DOKill();
+            transform.DOPunchScale(Vector3.one * damagePunchScale, damagePunchDuration, 5, 0.5f);
+        }
+        
+        if (currentHP <= 0) Die();
     }
 
     private void Die()
     {
-        GridPosition gridPos = GridSystem.Instance.GetGridPosition(transform.position);
-        GridSystem.Instance.GetGridObject(gridPos).SetUnit(null);
+        GridObject gridObj = GridSystem.Instance.GetGridObject(gridPosition);
+        gridObj?.SetUnit(null);
         Destroy(gameObject);
     }
 }
