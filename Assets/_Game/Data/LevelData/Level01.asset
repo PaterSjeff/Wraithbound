@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3df942da7b1de4b85a669133390a40f5, type: 3}
+  m_Name: Level01
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData_SO
+  levelName: Level01
+  levelNumber: 1
+  width: 10
+  height: 10
+  defaultTileType: {fileID: 11400000, guid: a144a331c09bc4f2c98698ab6c10842b, type: 2}
+  tileConfigurations:
+  - configName: Manual Paint - TallGrass
+    tileType: {fileID: 11400000, guid: 6d25fa224319b40dc9d42ffb63f73350, type: 2}
+    positions:
+    - x: 5
+      z: 4
+    - x: 6
+      z: 2
+    - x: 5
+      z: 1
+    - x: 2
+      z: 3
+    - x: 2
+      z: 5
+    - x: 6
+      z: 6
+    - x: 7
+      z: 4

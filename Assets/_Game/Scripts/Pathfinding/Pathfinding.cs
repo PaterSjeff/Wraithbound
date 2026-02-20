@@ -106,7 +106,11 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                int tentativeGCost = currentNode.GetGCost() + CalculateDistance(currentNode.GetGridPosition(), neighbourNode.GetGridPosition());
+                // Apply movement cost from tile type
+                GridObject neighbourGridObj = GridSystem.Instance.GetGridObject(neighbourNode.GetGridPosition());
+                float movementCost = neighbourGridObj != null ? neighbourGridObj.GetMovementCost() : 1f;
+                int baseCost = CalculateDistance(currentNode.GetGridPosition(), neighbourNode.GetGridPosition());
+                int tentativeGCost = currentNode.GetGCost() + Mathf.RoundToInt(baseCost * movementCost);
                 
                 if (tentativeGCost < neighbourNode.GetGCost())
                 {

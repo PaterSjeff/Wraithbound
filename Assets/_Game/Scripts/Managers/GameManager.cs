@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TurnManager turnManager;
     [SerializeField] private Pathfinding pathfinding;
     [SerializeField] private TileHighlightManager tileHighlightManager;
+    [SerializeField] private TilePainter tilePainter;
 
     private void Awake()
     {
@@ -44,6 +45,10 @@ public class GameManager : MonoBehaviour
         // 2. The Grid (Using the Inspector Reference)
         gridSystem.Init();
         pathfinding.Init();
+
+        // Paint tiles after grid is initialized
+        if (tilePainter != null)
+            tilePainter.PaintTiles();
 
         foreach (StaticObject so in FindObjectsOfType<StaticObject>())
             so.Init(gridSystem.GetGridPosition(so.transform.position));

@@ -20,7 +20,15 @@
 
 ### 2. GridDebugObject Prefab Update
 1. Open the `GridDebugObject` prefab (located in `Assets/_Game/Prefabs/`)
-2. **Add Highlight child**:
+2. **Add Tile Renderer child** (base layer for tile visuals):
+   - Add a child GameObject and name it `TileBase`
+   - Add a `Quad` mesh to this child (or create a plane)
+   - Position it at Y = 0.001 (just above ground)
+   - Scale it to match your cell size (e.g., X:1, Y:1, Z:1 for full cell coverage)
+   - Add a `MeshRenderer` component if not already present
+   - Create a material named `TileBase` with URP shader
+   - Assign the `TileBase` child's MeshRenderer to the `tileRenderer` field in `GridDebugObject`
+3. **Add Highlight child**:
    - Add a child GameObject and name it `Highlight`
    - Add a `Quad` mesh to this child (or create a plane)
    - Position it at Y = 0.01 (slightly above the ground to avoid z-fighting)
@@ -28,7 +36,7 @@
    - Add a `MeshRenderer` component if not already present
    - Create a material named `TileHighlight` with transparency enabled
    - Assign the `Highlight` child's MeshRenderer to the `highlightRenderer` field in `GridDebugObject`
-3. **Add Hover Preview child**:
+4. **Add Hover Preview child**:
    - Duplicate the `Highlight` child and rename it to `HoverPreview`
    - Position it at Y = 0.02 (above the highlight layer)
    - Scale slightly larger (e.g., X:0.95, Y:1, Z:0.95)

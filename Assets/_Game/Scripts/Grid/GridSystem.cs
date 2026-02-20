@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
 
@@ -10,6 +11,7 @@ public class GridSystem : MonoBehaviour
     [SerializeField] private float cellSize = 2f;
 
     private GridObject[,] gridObjects;
+    private Dictionary<GridPosition, GridDebugObject> gridDebugObjectMap;
 
     [SerializeField] private Transform gridDebugObjectPrefab;
 
@@ -36,6 +38,8 @@ public class GridSystem : MonoBehaviour
     private void CreateGrid()
     {
         gridObjects = new GridObject[width, height];
+        gridDebugObjectMap = new Dictionary<GridPosition, GridDebugObject>();
+        
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < height; z++)
@@ -47,8 +51,18 @@ public class GridSystem : MonoBehaviour
                 Transform debugTransform = Instantiate(gridDebugObjectPrefab, GetWorldPosition(gridPos), Quaternion.identity);
                 GridDebugObject gridDebugObject = debugTransform.GetComponent<GridDebugObject>();
                 gridDebugObject.SetGridObject(gridObjects[x, z]);
+                
+                // Store reference for quick access
+                gridDebugObjectMap[gridPos] = gridDebugObject;
             }
         }
+    }
+    
+    public GridDebugObject GetGridDebugObject(GridPosition position)
+    {
+        if (gridDebugObjectMap != null && gridDebugObjectMap.ContainsKey(position))
+            return gridDebugObjectMap[position];
+        return null;
     }
 
     public Vector3 GetWorldPosition(GridPosition gridPosition)

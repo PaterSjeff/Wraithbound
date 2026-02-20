@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23b933a743d40470d8342a9a23d56a06, type: 3}
+  m_Name: Tile_Basic
+  m_EditorClassIdentifier: Assembly-CSharp::TileType_SO
+  tileName: Normal
+  tileColor: {r: 0.2509804, g: 0.23137255, b: 0.22352941, a: 1}
+  tileSprite: {fileID: 0}
+  movementCostMultiplier: 1
+  blocksMovement: 0
+  effectsOnEnter: 
+  effectDuration: 2
+  damageOnEnter: 0
+  effectsWhileStanding: 
+  damagePerTurn: 0
+  dodgeBonus: 0
+  defenseBonus: 0
+  attackBonus: 0
+  providesCover: 0
+  coverDamageReduction: 0
+  tileEffect: {fileID: 0}
+  showVisualIndicator: 1

@@ -78,6 +78,10 @@ public class Unit : MonoBehaviour, IDamageable
         movesRemaining = moves;
         attacksRemaining = attacks;
         OnActionPointsChanged?.Invoke();
+        
+        // Apply per-turn tile effects
+        if (TileEffectManager.Instance != null)
+            TileEffectManager.Instance.ApplyTileEffectsPerTurn(this);
     }
 
     public bool CanMove() => movesRemaining > 0;
@@ -144,6 +148,10 @@ public class Unit : MonoBehaviour, IDamageable
         newCell?.SetUnit(this);
         gridPosition = newPos;
         transform.position = GridSystem.Instance.GetWorldPosition(newPos);
+        
+        // Apply tile effects when entering a new tile
+        if (TileEffectManager.Instance != null)
+            TileEffectManager.Instance.ApplyTileEffectsOnEnter(this, newPos);
     }
 
     public void TakeDamage(int incomingDamage)
